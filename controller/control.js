@@ -39,8 +39,8 @@ const getEmails = async (req, res) => {
             await openInbox(imap);
             const searchCriteria = [
                 ['ALL'],
-                ['SINCE', moment().subtract(5, 'days').format('YYYY-MM-DD')],
-                ['from', fromMail]
+                ['SINCE', moment().subtract(5, 'days').toISOString()],
+                ['FROM', fromMail]
             ];
 
             const results = await promisify(imap.search).bind(imap)(searchCriteria);
@@ -137,7 +137,7 @@ const getSubjectMails = async (req, res) => {
             await openInbox(imap);
             const searchCriteria = [
                 ['ALL'],
-                ['SINCE', moment().subtract(5, 'days').format('YYYY-MM-DD')],
+                ['SINCE', moment().subtract(5, 'days').toISOString()],
                 ['SUBJECT', fromSubject]
             ];
 
@@ -229,19 +229,17 @@ const move = async (req, res) => {
     imap.once('ready', async () => {
         try {
             await openInbox(imap);
-            //  imap.addBox('INBOX.map', (addBoxErr) => {
-            //      if (addBoxErr) {
-            //          console.error('Error creating folder:', addBoxErr);
-            //     }})
+            // imap.addBox('INBOX.rohit', (addBoxErr) => {
+            //         if (addBoxErr) {
+            //             console.error('Error creating folder:', addBoxErr);
+            //        }})
 
             const searchCriteria =  [
-                ['ALL'],
-                ['SINCE', moment().subtract(30, 'days').format('DD-MMM-YYYY')],
                 ['FROM', email]
             ];
 
             const results = await promisify(imap.search).bind(imap)(searchCriteria);
-
+        console.log(results);
             if (results.length === 0) {
                 console.log('No emails found.');
                 imap.end();
@@ -253,35 +251,16 @@ const move = async (req, res) => {
                 markSeen: false,
                 uids: true
             };
-
-           
-
             const fetch = imap.fetch(results, fetchOptions);
             fetch.on('message', (msg, seqno) => {
                 msg.on('body', (stream, info) => {
-                    simpleParser(stream, async (parseErr, parsed) => {
-                        if (parseErr) {
-                            console.error('Error parsing email:', parseErr);
-                            
-                            return;
-                        }
-
-                        // Move email to the bin folder
-                        imap.move(seqno, 'INBOX.map', function(moveErr) {
+                            imap.move(results, 'INBOX.rohit', function(moveErr) {
                             if (moveErr) {
                                 console.error('Error moving email:', moveErr);
-                                imap.end();
-                                
+                                imap.end();                                
                                 return;
                             }
-                            
-
-                          
-
-                        });
-
-                        
-                    });
+                        })                 
                 });
             });
 
